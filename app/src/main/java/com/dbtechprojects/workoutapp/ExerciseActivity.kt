@@ -2,6 +2,7 @@ package com.dbtechprojects.workoutapp
 
 import android.app.Dialog
 import android.media.MediaPlayer
+import android.media.MediaPlayer.create
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -11,10 +12,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dbtechprojects.ExerciseStatusAdapter
 import com.dbtechprojects.workoutapp.R
 import com.sevenminuteworkout.Constants
 import com.sevenminuteworkout.ExerciseModel
 import kotlinx.android.synthetic.main.activity_exercise.*
+import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -35,28 +38,29 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
     private var player: MediaPlayer? = null // Created a varible for Media Player to use later.
     private var exerciseList: ArrayList<ExerciseModel>? = null
 
+    private var exerciseAdapter: ExerciseStatusAdapter? = null
+
     // Declaring a exerciseAdapter object which will be initialized later.
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_exercise)
 
-        setSupportActionBar(Toolbar_excersise_activity)
+        setSupportActionBar(toolbar_exercise_activity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         // Navigate the activity on click on back button of action bar.
-        Toolbar_excersise_activity.setNavigationOnClickListener {
+        toolbar_exercise_activity.setNavigationOnClickListener {
            onBackPressed()
         }
 
         tts = TextToSpeech(this, this)
 
 
-
+        exerciseList = Constants.defaultExerciseList()
         setupRestView() // REST View is set in this function
 
-        exerciseList = Constants.defaultExerciseList()
-
         // setting up the exercise recycler view
+        setupExerciseStatusRecyclerView()
 
     }
 
@@ -93,7 +97,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
     override fun onInit(status: Int) {
 
         if (status == TextToSpeech.SUCCESS) {
-            // set US English as language for tts
+            // set US English as language for tts , checks in Text to Speech is enabled
             val result = tts!!.setLanguage(Locale.US)
 
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
@@ -110,10 +114,18 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
      */
     private fun setupRestView() {
 
+        try{
+            player = MediaPlayer.create(applicationContext, R.raw.press_start)
+            player!!.isLooping = false //only play once
+            player!!.start()
+        }catch (e: Exception){
+            e.printStackTrace()
+        }
 
         // Here according to the view make it visible as this is Rest View so rest view is visible and exercise view is not.
+
         llRestView.visibility = View.VISIBLE
-        llExcersiseView.visibility = View.GONE
+        llExerciseView.visibility = View.GONE
 
         /**
          * Here firstly we will check if the timer is running the and it is not null then cancel the running timer and start the new one.
@@ -128,6 +140,8 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
         // Here as the current position is -1 by default so to selected from the list it should be 0 so we have increased it by +1.
 
         // This function is used to set the progress details.
+        tvUpcomingExerciseName.text = exerciseList!![currentExercisePosition + 1].getName()
+        Log.d("Excersise Activity", "upcoming exercisename: ${exerciseList!![currentExercisePosition + 1].getName()}")
         setRestProgressBar()
     }
 
@@ -156,7 +170,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
 
             override fun onFinish() {
                 currentExercisePosition++
+
+                exerciseList!![currentExercisePosition].setIsSelected(true)
+                exerciseAdapter!!.notifyDataSetChanged()
                 setupExerciseView()
+
             }
         }.start()
     }
@@ -168,7 +186,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
 
         // Here according to the view make it visible as this is Exercise View so exercise view is visible and rest view is not.
         llRestView.visibility = View.GONE
-        llExcersiseView.visibility = View.VISIBLE
+        llExerciseView.visibility = View.VISIBLE
 
         /**
          * Here firstly we will check if the timer is running the and it is not null then cancel the running timer and start the new one.
@@ -183,7 +201,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
          * Here current exercise name and image is set to exercise view.
          */
 
+        speakOut(exerciseList!![currentExercisePosition].getName())  //speak current exercise name
+
         setExerciseProgressBar()
+        ivImage.setImageResource(exerciseList!![currentExercisePosition].getImage()) // get image from current exercise (exercise model) , getter function getImage
+        tvExerciseName.text = exerciseList!![currentExercisePosition].getName()
     }
 
     /**
@@ -191,22 +213,28 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
      */
     private fun setExerciseProgressBar() {
 
-        progressBarExcersise.progress = exerciseProgress
+        progressBarExercise.progress = exerciseProgress
 
-        exerciseTimer = object : CountDownTimer(30000, 1000) {
+        exerciseTimer = object : CountDownTimer(3000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 exerciseProgress++
-                progressBarExcersise.progress = 30 - exerciseProgress
-                tvExerciseTimer.text = (30 - exerciseProgress).toString()
+                progressBarExercise.progress = 3 - exerciseProgress
+                tvExerciseTimer.text = (3 - exerciseProgress).toString()
             }
 
             override fun onFinish() {
 
-                    Toast.makeText(
-                            this@ExerciseActivity,
-                            "Congratulations! You have completed the 7 minutes workout.",
-                            Toast.LENGTH_SHORT
-                    ).show()
+            if(currentExercisePosition < exerciseList?.size!! -1){
+                //index starts at 0 put excercise list starts at 1
+                    exerciseList!![currentExercisePosition].setIsSelected(false)
+                    exerciseList!![currentExercisePosition].setIsCompleted(true)
+                    exerciseAdapter!!.notifyDataSetChanged()
+                    setupRestView()
+            } else {
+                Toast.makeText(this@ExerciseActivity,
+                        "Congratulations Workout Complete",
+                        Toast.LENGTH_SHORT).show()
+            }
 
             }
         }.start()
@@ -220,6 +248,13 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
     }
 
 
+    private fun setupExerciseStatusRecyclerView(){
+        rvExerciseStatus.layoutManager = LinearLayoutManager(this,
+                LinearLayoutManager.HORIZONTAL, false)
+        exerciseAdapter = ExerciseStatusAdapter(exerciseList!!, this)
+        rvExerciseStatus.adapter = exerciseAdapter
+
+    }
 
 
 
