@@ -1,6 +1,7 @@
 package com.dbtechprojects.workoutapp
 
 import android.app.Dialog
+import android.content.Intent
 import android.media.MediaPlayer
 import android.media.MediaPlayer.create
 import android.net.Uri
@@ -17,6 +18,7 @@ import com.dbtechprojects.workoutapp.R
 import com.sevenminuteworkout.Constants
 import com.sevenminuteworkout.ExerciseModel
 import kotlinx.android.synthetic.main.activity_exercise.*
+import kotlinx.android.synthetic.main.dialog_custom_back_confirmation.*
 import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
@@ -50,7 +52,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         // Navigate the activity on click on back button of action bar.
         toolbar_exercise_activity.setNavigationOnClickListener {
-           onBackPressed()
+           customDialogforBackButton()
         }
 
         tts = TextToSpeech(this, this)
@@ -231,9 +233,9 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
                     exerciseAdapter!!.notifyDataSetChanged()
                     setupRestView()
             } else {
-                Toast.makeText(this@ExerciseActivity,
-                        "Congratulations Workout Complete",
-                        Toast.LENGTH_SHORT).show()
+                finish()
+                val intent = Intent(this@ExerciseActivity, FinishActivity::class.java)
+                startActivity(intent)
             }
 
             }
@@ -253,6 +255,24 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener  {
                 LinearLayoutManager.HORIZONTAL, false)
         exerciseAdapter = ExerciseStatusAdapter(exerciseList!!, this)
         rvExerciseStatus.adapter = exerciseAdapter
+
+    }
+
+    private fun customDialogforBackButton(){
+        val dialog = Dialog(this)
+
+        dialog.setContentView(R.layout.dialog_custom_back_confirmation)
+
+        dialog.tvYes.setOnClickListener {
+                finish()
+                dialog.dismiss()
+        }
+        dialog.tvNo.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+
 
     }
 

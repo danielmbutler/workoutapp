@@ -11,9 +11,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        llstart.setOnClickListener {
+        llStart.setOnClickListener {
             val intent = Intent(this, ExerciseActivity::class.java)
             startActivity(intent)
         }
+
+        llBMI.setOnClickListener {
+            val intent = Intent(this, BmiActivity::class.java)
+            startActivity(intent)
+        }
+
     }
 }
