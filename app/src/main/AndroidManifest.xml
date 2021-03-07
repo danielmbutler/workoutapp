@@ -9,11 +9,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".BmiActivity"
+        <activity
+            android:name=".HistoryActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"
 
-        </activity>
+            />
+        <activity
+            android:name=".BmiActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" />
         <activity
             android:name=".FinishActivity"
             android:screenOrientation="portrait"
